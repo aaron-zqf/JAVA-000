@@ -1,33 +1,36 @@
 package com.aaron;
 
 import java.io.*;
+import java.lang.reflect.Method;
 
 public class MyClassLoader extends ClassLoader{
-
-    public static void main(String[] args) throws ClassNotFoundException, FileNotFoundException {
-        MyClassLoader classLoader = new MyClassLoader();
-        classLoader.loadClass("D://Hello.xlass");
+    public static void main(String[] args) throws Exception{
+        Class<?> clazz = new MyClassLoader().findClass("Hello");
+        Object obj = clazz.getDeclaredConstructor().newInstance();
+        Method hello = clazz.getDeclaredMethod("hello");
+        hello.invoke(obj);
+        System.out.println("当前类加载器：" + clazz.getClassLoader());
     }
 
     @Override
     protected Class<?> findClass(String name) {
-        byte[] bytes = new byte[0];
         try {
-            bytes = loadClassData(name);
-        } catch (IOException e) {
+            InputStream is = this.getClass().getResourceAsStream("Hello.xlass");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int b;
+            while((b = is.read()) != -1){
+                baos.write(b);
+            }
+            baos.close();
+            is.close();
+            byte[] bytes = baos.toByteArray();
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte)(255 - bytes[i]);
+            }
+            return defineClass(name,bytes,0, bytes.length);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return defineClass(name,bytes,0, bytes.length);
-    }
-
-    public byte[] loadClassData(String name) throws IOException {
-        FileInputStream is = new FileInputStream(new File(name));
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int b;
-
-        while((b = is.read()) != -1){
-            baos.write(b);
-        }
-        return baos.toByteArray();
+        return null;
     }
 }
